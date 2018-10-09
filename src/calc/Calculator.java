@@ -1,10 +1,10 @@
 package calc;
 
 import java.util.*;
+import java.util.StringTokenizer;
 
 import static java.lang.Double.NaN;
 import static java.lang.Math.pow;
-
 
 /*
  *   A calculator for rather simple arithmetic expressions
@@ -20,7 +20,7 @@ class Calculator {
     // Here are the only allowed instance variables!
     // Error messages (more on static later)
     final static String MISSING_OPERAND = "Missing or bad operand";
-    final static String DIV_BY_ZERO = "Division with 0";
+    final static String DIV_BY_ZERO = "Division by 0";
     final static String MISSING_OPERATOR = "Missing operator or parenthesis";
     final static String OP_NOT_FOUND = "Operator not found";
 
@@ -32,15 +32,14 @@ class Calculator {
         if (expr.length() == 0) {
             return NaN;
         }
-        // TODO List<String> tokens = tokenize(expr);
-        // TODO List<String> postfix = infix2Postfix(tokens);
-        // TODO double result = evalPostfix(postfix);
-        return 0; // result;
+
+        LinkedList<String> tokens = tokenize(expr);
+        List<String> postfix = infix2postfix(tokens);
+
+        return evaluatePostfix(postfix);
     }
 
     // ------  Evaluate RPN expression -------------------
-
-    // TODO Eval methods
 
     double applyOperator(String op, double d1, double d2) {
         switch (op) {
@@ -58,15 +57,11 @@ class Calculator {
             case "^":
                 return pow(d2, d1);
         }
+
         throw new RuntimeException(OP_NOT_FOUND);
     }
 
-    // ------- Infix 2 Postfix ------------------------
-
-    // TODO Methods
-
     List<String> infix2postfix(List<String> input) {
-
         LinkedList<String> outputQueue = new LinkedList<>();
         LinkedList<String> operatorStack = new LinkedList<>();
 
@@ -93,6 +88,27 @@ class Calculator {
         outputQueue.addAll(operatorStack);
 
         return outputQueue;
+    }
+
+    double evaluatePostfix(List<String> expression) {
+        Stack<Double> stack = new Stack<Double>();
+        Iterator<String> expressionIterator = expression.iterator();
+
+        while (expressionIterator.hasNext()) {
+            String token = expressionIterator.next();
+
+            if (this.isInteger(token)) {
+                double operand = Double.parseDouble(token);
+                stack.push(operand);
+            } else {
+                double firstOperand = stack.pop();
+                double secondOperand = stack.pop();
+
+                stack.push(this.applyOperator(token, firstOperand, secondOperand));
+            }
+        }
+
+        return stack.pop();
     }
 
     void popUntilMatchingParenthesis(LinkedList<String> operatorStack, LinkedList<String> outputQueue) {
@@ -125,7 +141,7 @@ class Calculator {
         boolean equalPriority = headPrecendece == tokenPrecendece;
         boolean isHeadLeftAssociative = getAssociativity(headOperator) == Assoc.LEFT;
 
-        return headPrecendece > tokenPrecendece || equalPriority && isHeadLeftAssociative;
+        return (headPrecendece > tokenPrecendece) || (equalPriority && isHeadLeftAssociative);
     }
 
 
@@ -156,13 +172,26 @@ class Calculator {
         }
     }
 
+    public LinkedList<String> tokenize(String stringToTokenize) {
+        LinkedList<String> tokens = new LinkedList<>();
+        StringTokenizer stringTokenizer = new StringTokenizer(stringToTokenize);
 
-    // ---------- Tokenize -----------------------
+        while (stringTokenizer.hasMoreElements()) {
+            String token = stringTokenizer.nextToken();
 
-    // TODO Methods to tokenize
+            // ??? ????? ????? ?? ?? ???
+            // maybe input from terminal is borken
+            if ("(".contains(token)) {
+                tokens.add("(");
+            } else if (")".contains(token)) {
+                tokens.add(")");
+            } else {
+                tokens.add(token);
+            }
+        }
 
-
-
+        return tokens;
+    }
 
     public static boolean isInteger(String s) {
         try {

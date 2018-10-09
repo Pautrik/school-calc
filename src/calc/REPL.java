@@ -25,21 +25,18 @@ class REPL {
     final Calculator calculator = new Calculator();
 
     void program() {
-        String[] a = {"3", "*", "2", "+", "(", "1", "^", "7", ")", "^", "3"};
-        LinkedList<String> input = new LinkedList<String>(Arrays.asList(a));
+        while (true) {
+            out.print("> ");
+            String userInput = scan.nextLine();
+            try {
+                double result = calculator.eval(userInput);
+                out.println(result);
+            }catch( Exception e){
+                e.printStackTrace(System.out);
 
-        out.println(calculator.infix2postfix(input).toString());
-
-//        while (true) {
-//            out.print("> ");
-//            String input = scan.nextLine();
-//            try {
-//                double result = calculator.eval(input);
-//                out.println(result);
-//            }catch( Exception e){
-//                out.println(e.getMessage());
-//            }
-//        }
+                out.println(e.getMessage());
+            }
+        }
     }
 
 
