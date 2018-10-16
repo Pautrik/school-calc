@@ -21,10 +21,10 @@ class REPL {
         new REPL().program();
     }
 
-    final Scanner scan = new Scanner(in);
-    final Calculator calculator = new Calculator();
+    final private Scanner scan = new Scanner(in);
+    final private Calculator calculator = new Calculator();
 
-    void program() {
+    public void program() {
         while (true) {
             out.print("> ");
             String userInput = scan.nextLine();
@@ -38,6 +38,4 @@ class REPL {
             }
         }
     }
-
-
 }

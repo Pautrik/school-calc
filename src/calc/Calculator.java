@@ -19,16 +19,16 @@ class Calculator {
 
     // Here are the only allowed instance variables!
     // Error messages (more on static later)
-    final static String MISSING_OPERAND = "Missing or bad operand";
-    final static String DIV_BY_ZERO = "Division by 0";
-    final static String MISSING_OPERATOR = "Missing operator or parenthesis";
-    final static String OP_NOT_FOUND = "Operator not found";
+    final private static String MISSING_OPERAND = "Missing or bad operand";
+    final private static String DIV_BY_ZERO = "Division by 0";
+    final private static String MISSING_OPERATOR = "Missing operator or parenthesis";
+    final private static String OP_NOT_FOUND = "Operator not found";
 
     // Definition of operators
-    final static String OPERATORS = "+-*/^";
+    final private static String OPERATORS = "+-*/^";
 
     // Method used in REPL
-    double eval(String expr) {
+    public double eval(String expr) {
         if (expr.length() == 0) {
             return NaN;
         }
@@ -39,9 +39,7 @@ class Calculator {
         return evaluatePostfix(postfix);
     }
 
-    // ------  Evaluate RPN expression -------------------
-
-    double applyOperator(String op, double d1, double d2) {
+    private double applyOperator(String op, double d1, double d2) {
         switch (op) {
             case "+":
                 return d1 + d2;
@@ -61,7 +59,7 @@ class Calculator {
         throw new RuntimeException(OP_NOT_FOUND);
     }
 
-    List<String> infix2postfix(List<String> input) {
+    private List<String> infix2postfix(List<String> input) {
         LinkedList<String> outputQueue = new LinkedList<>();
         LinkedList<String> operatorStack = new LinkedList<>();
 
@@ -90,7 +88,7 @@ class Calculator {
         return outputQueue;
     }
 
-    double evaluatePostfix(List<String> expression) {
+    private double evaluatePostfix(List<String> expression) {
         Stack<Double> stack = new Stack<Double>();
         Iterator<String> expressionIterator = expression.iterator();
 
@@ -111,7 +109,7 @@ class Calculator {
         return stack.pop();
     }
 
-    void popUntilMatchingParenthesis(LinkedList<String> operatorStack, LinkedList<String> outputQueue) {
+    private void popUntilMatchingParenthesis(LinkedList<String> operatorStack, LinkedList<String> outputQueue) {
         String headOperator = operatorStack.getFirst();
         while(headOperator != "(") {
             outputQueue.add(operatorStack.pop());
@@ -119,7 +117,7 @@ class Calculator {
         }
     }
 
-    void handleOperatorPopping(String token,
+    private void handleOperatorPopping(String token,
                                LinkedList<String> operatorStack,
                                LinkedList<String> outputQueue) {
         while(shouldPop(operatorStack, token)) {
@@ -128,7 +126,7 @@ class Calculator {
         }
     }
 
-    boolean shouldPop(LinkedList<String> operatorStack, String token) {
+    private boolean shouldPop(LinkedList<String> operatorStack, String token) {
         if(operatorStack.size() <= 0) return false;
 
         String headOperator = operatorStack.getFirst();
@@ -145,7 +143,7 @@ class Calculator {
     }
 
 
-    int getPrecedence(String op) {
+    private int getPrecedence(String op) {
         if ("+-".contains(op)) {
             return 2;
         } else if ("*/".contains(op)) {
@@ -157,12 +155,12 @@ class Calculator {
         }
     }
 
-    enum Assoc {
+    private enum Assoc {
         LEFT,
         RIGHT
     }
 
-    Assoc getAssociativity(String op) {
+    private Assoc getAssociativity(String op) {
         if ("+-*/".contains(op)) {
             return Assoc.LEFT;
         } else if ("^".contains(op)) {
@@ -172,7 +170,7 @@ class Calculator {
         }
     }
 
-    public LinkedList<String> tokenize(String stringToTokenize) {
+    private LinkedList<String> tokenize(String stringToTokenize) {
         LinkedList<String> tokens = new LinkedList<>();
         StringTokenizer stringTokenizer = new StringTokenizer(stringToTokenize);
 
@@ -193,7 +191,7 @@ class Calculator {
         return tokens;
     }
 
-    public static boolean isInteger(String s) {
+    private static boolean isInteger(String s) {
         try {
             Integer.parseInt(s);
         } catch(NumberFormatException e) {
