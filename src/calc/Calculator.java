@@ -1,10 +1,11 @@
 package calc;
 
+import java.lang.IllegalArgumentException;
 import java.util.*;
+import java.util.StringTokenizer;
 
 import static java.lang.Double.NaN;
 import static java.lang.Math.pow;
-
 
 /*
  *   A calculator for rather simple arithmetic expressions
@@ -15,34 +16,27 @@ import static java.lang.Math.pow;
  *   NOTE:
  *   - No negative numbers implemented
  */
-class Calculator {
+public class Calculator {
 
-    // Here are the only allowed instance variables!
-    // Error messages (more on static later)
-    final static String MISSING_OPERAND = "Missing or bad operand";
-    final static String DIV_BY_ZERO = "Division with 0";
-    final static String MISSING_OPERATOR = "Missing operator or parenthesis";
-    final static String OP_NOT_FOUND = "Operator not found";
+    final public static String MISSING_OPERAND = "Missing or bad operand";
+    final public static String DIV_BY_ZERO = "Division by 0";
+    final public static String MISSING_OPERATOR = "Missing operator or parenthesis";
+    final public static String OP_NOT_FOUND = "Operator not found";
 
-    // Definition of operators
-    final static String OPERATORS = "+-*/^";
+    final public static String OPERATORS = "+-*/^";
 
-    // Method used in REPL
-    double eval(String expr) {
-        if (expr.length() == 0) {
+    public double eval(String expression) {
+        if (expression.length() == 0) {
             return NaN;
         }
-        // TODO List<String> tokens = tokenize(expr);
-        // TODO List<String> postfix = infix2Postfix(tokens);
-        // TODO double result = evalPostfix(postfix);
-        return 0; // result;
+
+        LinkedList<String> tokens = tokenize(expression);
+        List<String> postfix = infix2postfix(tokens);
+
+        return evaluatePostfix(postfix);
     }
 
-    // ------  Evaluate RPN expression -------------------
-
-    // TODO Eval methods
-
-    double applyOperator(String op, double d1, double d2) {
+    private double applyOperator(String op, double d1, double d2) {
         switch (op) {
             case "+":
                 return d1 + d2;
@@ -58,36 +52,48 @@ class Calculator {
             case "^":
                 return pow(d2, d1);
         }
+
         throw new RuntimeException(OP_NOT_FOUND);
     }
 
-    // ------- Infix 2 Postfix ------------------------
-
-    // TODO Methods
-
-    List<String> infix2postfix(List<String> input) {
-
+    public List<String> infix2postfix(List<String> input) {
         LinkedList<String> outputQueue = new LinkedList<>();
         LinkedList<String> operatorStack = new LinkedList<>();
+
+        int numberOfOperators = 0;
+        int numberOfOperands = 0;
 
         for(String token : input) {
             if("+-*/^".contains(token)) {
                 handleOperatorPopping(token, operatorStack, outputQueue);
                 operatorStack.push(token);
+                numberOfOperators++;
             }
             else if(isInteger(token)) {
                 outputQueue.addLast(token);
+                numberOfOperands++;
             }
             else if("(".contains(token)) {
                 operatorStack.push(token);
             }
             else if(")".contains(token)) {
-                popUntilMatchingParenthesis(operatorStack, outputQueue);
-                operatorStack.pop();
+                try {
+                    popUntilMatchingParenthesis(operatorStack, outputQueue);
+                    operatorStack.pop();
+                } catch (NoSuchElementException exception) {
+                    throw new IllegalArgumentException(MISSING_OPERATOR);
+                }
             }
             else {
-                throw new RuntimeException("Faulty Input");
+                throw new RuntimeException(String.format("Faulty Input: %s", token));
             }
+        }
+
+        if (numberOfOperands > numberOfOperators + 1) {
+            throw new IllegalArgumentException(MISSING_OPERATOR);
+        }
+        else if (numberOfOperands < numberOfOperators + 1) {
+            throw new IllegalArgumentException(MISSING_OPERAND);
         }
 
         outputQueue.addAll(operatorStack);
@@ -95,15 +101,41 @@ class Calculator {
         return outputQueue;
     }
 
-    void popUntilMatchingParenthesis(LinkedList<String> operatorStack, LinkedList<String> outputQueue) {
+    public double evaluatePostfix(List<String> expression) {
+        Stack<Double> stack = new Stack<Double>();
+        Iterator<String> expressionIterator = expression.iterator();
+
+        while (expressionIterator.hasNext()) {
+            String token = expressionIterator.next();
+
+            if (this.isInteger(token)) {
+                double operand = Double.parseDouble(token);
+                stack.push(operand);
+            } else {
+                double firstOperand = stack.pop();
+                double secondOperand = stack.pop();
+
+                stack.push(this.applyOperator(token, firstOperand, secondOperand));
+            }
+        }
+
+        return stack.pop();
+    }
+
+    private void popUntilMatchingParenthesis(LinkedList<String> operatorStack, LinkedList<String> outputQueue) {
         String headOperator = operatorStack.getFirst();
         while(headOperator != "(") {
             outputQueue.add(operatorStack.pop());
-            headOperator = operatorStack.getFirst();
+
+            try {
+                headOperator = operatorStack.getFirst();
+            } catch (NoSuchElementException exception) {
+                throw exception;
+            }
         }
     }
 
-    void handleOperatorPopping(String token,
+    private void handleOperatorPopping(String token,
                                LinkedList<String> operatorStack,
                                LinkedList<String> outputQueue) {
         while(shouldPop(operatorStack, token)) {
@@ -112,7 +144,7 @@ class Calculator {
         }
     }
 
-    boolean shouldPop(LinkedList<String> operatorStack, String token) {
+    private boolean shouldPop(LinkedList<String> operatorStack, String token) {
         if(operatorStack.size() <= 0) return false;
 
         String headOperator = operatorStack.getFirst();
@@ -125,11 +157,11 @@ class Calculator {
         boolean equalPriority = headPrecendece == tokenPrecendece;
         boolean isHeadLeftAssociative = getAssociativity(headOperator) == Assoc.LEFT;
 
-        return headPrecendece > tokenPrecendece || equalPriority && isHeadLeftAssociative;
+        return (headPrecendece > tokenPrecendece) || (equalPriority && isHeadLeftAssociative);
     }
 
 
-    int getPrecedence(String op) {
+    private int getPrecedence(String op) {
         if ("+-".contains(op)) {
             return 2;
         } else if ("*/".contains(op)) {
@@ -141,12 +173,12 @@ class Calculator {
         }
     }
 
-    enum Assoc {
+    private enum Assoc {
         LEFT,
         RIGHT
     }
 
-    Assoc getAssociativity(String op) {
+    private Assoc getAssociativity(String op) {
         if ("+-*/".contains(op)) {
             return Assoc.LEFT;
         } else if ("^".contains(op)) {
@@ -156,15 +188,42 @@ class Calculator {
         }
     }
 
+    public LinkedList<String> tokenize(String stringToTokenize) {
+        LinkedList<String> tokens = new LinkedList<>();
+        StringTokenizer stringTokenizer = new StringTokenizer(
+            stringToTokenize,
+            OPERATORS + "()",
+            true
+        );
 
-    // ---------- Tokenize -----------------------
+        while (stringTokenizer.hasMoreElements()) {
+            String token = stringTokenizer.nextToken();
 
-    // TODO Methods to tokenize
+            if (token.matches("\\d+ \\d+")) {
+                throw new IllegalArgumentException(MISSING_OPERATOR);
+            }
 
+            token = token.replaceAll("\\s+", "");
+            if (token.length() == 0) {
+                continue;
+            }
 
+            // I don't really understand this.
+            // tokens.add(token) should be the only line needed.
+            // Maybe input from terminal is broken.
+            if ("(".contains(token)) {
+                tokens.add("(");
+            } else if (")".contains(token)) {
+                tokens.add(")");
+            } else {
+                tokens.add(token);
+            }
+        }
 
+        return tokens;
+    }
 
-    public static boolean isInteger(String s) {
+    private static boolean isInteger(String s) {
         try {
             Integer.parseInt(s);
         } catch(NumberFormatException e) {
