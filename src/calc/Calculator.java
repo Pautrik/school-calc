@@ -17,23 +17,22 @@ import static java.lang.Math.pow;
  */
 class Calculator {
 
-    // Here are the only allowed instance variables!
-    // Error messages (more on static later)
     final private static String MISSING_OPERAND = "Missing or bad operand";
     final private static String DIV_BY_ZERO = "Division by 0";
     final private static String MISSING_OPERATOR = "Missing operator or parenthesis";
     final private static String OP_NOT_FOUND = "Operator not found";
 
-    // Definition of operators
     final private static String OPERATORS = "+-*/^";
 
-    // Method used in REPL
-    public double eval(String expr) {
-        if (expr.length() == 0) {
+    public double eval(String expression) {
+        expression = expression.replaceAll("\\s+", "");
+
+        if (expression.length() == 0) {
             return NaN;
         }
 
-        LinkedList<String> tokens = tokenize(expr);
+
+        LinkedList<String> tokens = tokenize(expression);
         List<String> postfix = infix2postfix(tokens);
 
         return evaluatePostfix(postfix);
@@ -79,7 +78,7 @@ class Calculator {
                 operatorStack.pop();
             }
             else {
-                throw new RuntimeException("Faulty Input");
+                throw new RuntimeException(String.format("Faulty Input: %s", token));
             }
         }
 
@@ -172,13 +171,18 @@ class Calculator {
 
     private LinkedList<String> tokenize(String stringToTokenize) {
         LinkedList<String> tokens = new LinkedList<>();
-        StringTokenizer stringTokenizer = new StringTokenizer(stringToTokenize);
+        StringTokenizer stringTokenizer = new StringTokenizer(
+            stringToTokenize,
+            OPERATORS + "()",
+            true
+        );
 
         while (stringTokenizer.hasMoreElements()) {
             String token = stringTokenizer.nextToken();
 
-            // ??? ????? ????? ?? ?? ???
-            // maybe input from terminal is borken
+            // I don't really understand this.
+            // tokens.add(token) should be the only line needed.
+            // Maybe input from terminal is broken.
             if ("(".contains(token)) {
                 tokens.add("(");
             } else if (")".contains(token)) {
