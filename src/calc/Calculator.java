@@ -1,5 +1,6 @@
 package calc;
 
+import java.lang.IllegalArgumentException;
 import java.util.*;
 import java.util.StringTokenizer;
 
@@ -15,22 +16,19 @@ import static java.lang.Math.pow;
  *   NOTE:
  *   - No negative numbers implemented
  */
-class Calculator {
+public class Calculator {
 
-    final private static String MISSING_OPERAND = "Missing or bad operand";
-    final private static String DIV_BY_ZERO = "Division by 0";
-    final private static String MISSING_OPERATOR = "Missing operator or parenthesis";
-    final private static String OP_NOT_FOUND = "Operator not found";
+    final public static String MISSING_OPERAND = "Missing or bad operand";
+    final public static String DIV_BY_ZERO = "Division by 0";
+    final public static String MISSING_OPERATOR = "Missing operator or parenthesis";
+    final public static String OP_NOT_FOUND = "Operator not found";
 
-    final private static String OPERATORS = "+-*/^";
+    final public static String OPERATORS = "+-*/^";
 
     public double eval(String expression) {
-        expression = expression.replaceAll("\\s+", "");
-
         if (expression.length() == 0) {
             return NaN;
         }
-
 
         LinkedList<String> tokens = tokenize(expression);
         List<String> postfix = infix2postfix(tokens);
@@ -58,28 +56,44 @@ class Calculator {
         throw new RuntimeException(OP_NOT_FOUND);
     }
 
-    private List<String> infix2postfix(List<String> input) {
+    public List<String> infix2postfix(List<String> input) {
         LinkedList<String> outputQueue = new LinkedList<>();
         LinkedList<String> operatorStack = new LinkedList<>();
+
+        int numberOfOperators = 0;
+        int numberOfOperands = 0;
 
         for(String token : input) {
             if("+-*/^".contains(token)) {
                 handleOperatorPopping(token, operatorStack, outputQueue);
                 operatorStack.push(token);
+                numberOfOperators++;
             }
             else if(isInteger(token)) {
                 outputQueue.addLast(token);
+                numberOfOperands++;
             }
             else if("(".contains(token)) {
                 operatorStack.push(token);
             }
             else if(")".contains(token)) {
-                popUntilMatchingParenthesis(operatorStack, outputQueue);
-                operatorStack.pop();
+                try {
+                    popUntilMatchingParenthesis(operatorStack, outputQueue);
+                    operatorStack.pop();
+                } catch (NoSuchElementException exception) {
+                    throw new IllegalArgumentException(MISSING_OPERATOR);
+                }
             }
             else {
                 throw new RuntimeException(String.format("Faulty Input: %s", token));
             }
+        }
+
+        if (numberOfOperands > numberOfOperators + 1) {
+            throw new IllegalArgumentException(MISSING_OPERATOR);
+        }
+        else if (numberOfOperands < numberOfOperators + 1) {
+            throw new IllegalArgumentException(MISSING_OPERAND);
         }
 
         outputQueue.addAll(operatorStack);
@@ -87,7 +101,7 @@ class Calculator {
         return outputQueue;
     }
 
-    private double evaluatePostfix(List<String> expression) {
+    public double evaluatePostfix(List<String> expression) {
         Stack<Double> stack = new Stack<Double>();
         Iterator<String> expressionIterator = expression.iterator();
 
@@ -112,7 +126,12 @@ class Calculator {
         String headOperator = operatorStack.getFirst();
         while(headOperator != "(") {
             outputQueue.add(operatorStack.pop());
-            headOperator = operatorStack.getFirst();
+
+            try {
+                headOperator = operatorStack.getFirst();
+            } catch (NoSuchElementException exception) {
+                throw exception;
+            }
         }
     }
 
@@ -169,7 +188,7 @@ class Calculator {
         }
     }
 
-    private LinkedList<String> tokenize(String stringToTokenize) {
+    public LinkedList<String> tokenize(String stringToTokenize) {
         LinkedList<String> tokens = new LinkedList<>();
         StringTokenizer stringTokenizer = new StringTokenizer(
             stringToTokenize,
@@ -179,6 +198,15 @@ class Calculator {
 
         while (stringTokenizer.hasMoreElements()) {
             String token = stringTokenizer.nextToken();
+
+            if (token.matches("\\d+ \\d+")) {
+                throw new IllegalArgumentException(MISSING_OPERATOR);
+            }
+
+            token = token.replaceAll("\\s+", "");
+            if (token.length() == 0) {
+                continue;
+            }
 
             // I don't really understand this.
             // tokens.add(token) should be the only line needed.
